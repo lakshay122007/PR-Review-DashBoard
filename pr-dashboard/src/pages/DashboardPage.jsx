@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
 import { getUser, getUserRepos, getRepoPRs, getPRReviews } from '../api/github'
 import { computeCycleTime, computeReviewLag, computeReviewerLoad } from '../metrics/computeMetrics'
+import CycleTimeChart from '../components/CycleTimeChart'
 
 function DashboardPage() {
     const token = useAuthStore((state) => state.token)
     const logout = useAuthStore((state) => state.logout)
     const navigate = useNavigate()
+    const [prs, setPrs] = useState([])
 
     const [user, setUser] = useState(null)
     const [repos, setRepos] = useState([])
@@ -29,6 +31,7 @@ function DashboardPage() {
         setLoading(true)
 
         const prs = await getRepoPRs(token, repo.owner.login, repo.name)
+        setPrs(prs)
 
         const reviewsPerPR = await Promise.all(
         prs.map(pr => getPRReviews(token, repo.owner.login, repo.name, pr.number))
@@ -151,6 +154,7 @@ function DashboardPage() {
                     <span className="text-sm text-gray-400">{count}</span>
                 </div>
                 ))}
+                <CycleTimeChart prs={prs} />
             </div>
             </div>
         )}
