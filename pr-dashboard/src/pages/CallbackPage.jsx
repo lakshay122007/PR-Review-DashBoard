@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import useAuthStore from '../store/authStore'
 
 function CallbackPage() {
     const navigate = useNavigate()
+    const setToken = useAuthStore((state) => state.setToken)
     const called = useRef(false)
 
     useEffect(() => {
@@ -20,7 +22,7 @@ function CallbackPage() {
             .then(res => res.json())
             .then(data => {
             if (data.token) {
-                localStorage.setItem('github_token', data.token)
+                setToken(data.token)
                 navigate('/dashboard')
             } else {
                 navigate('/')
