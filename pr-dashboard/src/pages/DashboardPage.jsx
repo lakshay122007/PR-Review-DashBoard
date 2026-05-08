@@ -4,6 +4,7 @@ import useAuthStore from '../store/authStore'
 import { getUser, getUserRepos, getRepoPRs, getPRReviews, getOpenPRs } from '../api/github'
 import { computeCycleTime, computeReviewLag, computeReviewerLoad, flagStale } from '../metrics/computeMetrics'
 import CycleTimeChart from '../components/CycleTimeChart'
+import Navbar from '../components/Navbar'
 
 function DashboardPage() {
     const token = useAuthStore((state) => state.token)
@@ -77,23 +78,9 @@ function DashboardPage() {
     }
 
     return (
-    <div className="min-h-screen bg-gray-950 text-white p-8">
-
-        <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-            <img src={user.avatar_url} className="w-10 h-10 rounded-full" />
-            <div>
-                <p className="font-semibold">{user.name}</p>
-                <p className="text-gray-400 text-sm">@{user.login}</p>
-            </div>
-            </div>
-            <button
-            onClick={handleLogout}
-            className="text-sm text-gray-400 hover:text-white transition"
-            >
-            Logout
-            </button>
-        </div>
+    <div className="min-h-screen bg-gray-950 text-white">
+    <Navbar user={user} />
+        <div className="p-8">
 
         <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">Select a repo</h2>
@@ -196,7 +183,7 @@ function DashboardPage() {
         </div>
         
         )}
-
+    </div>
     </div>
     )
 }
