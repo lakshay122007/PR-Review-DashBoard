@@ -5,6 +5,7 @@ import { getUser, getUserRepos, getRepoPRs, getPRReviews, getOpenPRs } from '../
 import { computeCycleTime, computeReviewLag, computeReviewerLoad, flagStale } from '../metrics/computeMetrics'
 import CycleTimeChart from '../components/CycleTimeChart'
 import Navbar from '../components/Navbar'
+import SkeletonCard from '../components/SkeletonCard'
 
 function DashboardPage() {
     const token = useAuthStore((state) => state.token)
@@ -104,9 +105,13 @@ function DashboardPage() {
             </div>
         </div>
 
-        {loading && (
-            <p className="text-gray-400">Fetching PR data...</p>
-        )}
+            {loading && (
+            <div className="grid grid-cols-3 gap-4">
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+            </div>
+            )}
 
         {metrics && !loading && (
         <div>
