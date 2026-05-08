@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
-import { getUser, getUserRepos, getRepoPRs, getPRReviews } from '../api/github'
-import { computeCycleTime, computeReviewLag, computeReviewerLoad } from '../metrics/computeMetrics'
+import { getUser, getUserRepos, getRepoPRs, getPRReviews, getOpenPRs } from '../api/github'
+import { computeCycleTime, computeReviewLag, computeReviewerLoad, flagStale } from '../metrics/computeMetrics'
 import CycleTimeChart from '../components/CycleTimeChart'
 
 function DashboardPage() {
@@ -10,6 +10,7 @@ function DashboardPage() {
     const logout = useAuthStore((state) => state.logout)
     const navigate = useNavigate()
     const [prs, setPrs] = useState([])
+    const [stalePRs, setStalePRs] = useState([])
 
     const [user, setUser] = useState(null)
     const [repos, setRepos] = useState([])
@@ -32,6 +33,9 @@ function DashboardPage() {
 
         const prs = await getRepoPRs(token, repo.owner.login, repo.name)
         setPrs(prs)
+        const openPRs = await getOpenPRs(token, repo.owner.login, repo.name)
+        const stale = openPRs.filter(pr => flagStale(pr))
+        setStalePRs(stale)
 
         const reviewsPerPR = await Promise.all(
         prs.map(pr => getPRReviews(token, repo.owner.login, repo.name, pr.number))
@@ -73,7 +77,7 @@ function DashboardPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-950 text-white p-8">
+    <div className="min-h-screen bg-gray-950 text-white p-8">
 
         <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
@@ -118,7 +122,7 @@ function DashboardPage() {
         )}
 
         {metrics && !loading && (
-            <div>
+        <div>
             <h2 className="text-lg font-semibold mb-4">
                 Metrics — {selectedRepo.name}
             </h2>
@@ -155,11 +159,45 @@ function DashboardPage() {
                 </div>
                 ))}
                 <CycleTimeChart prs={prs} />
+                {stalePRs.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="font-semibold mb-3">
+                        Stale PRs
+                        <span className="ml-2 text-sm text-red-400">
+                            {stalePRs.length} need attention
+                        </span>
+                        </h3>
+                        <div className="flex flex-col gap-2">
+                        {stalePRs.map(pr => (
+                            <a
+                            key={pr.id}
+                            href={pr.html_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="bg-gray-900 rounded-lg p-4 flex items-center justify-between hover:bg-gray-800 transition"
+                            >
+                            <div>
+                                <p className="text-sm font-medium">{pr.title}</p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                by @{pr.user.login}
+                                </p>
+                            </div>
+                            <span className="text-xs text-red-400 flex-shrink-0 ml-4">
+                                {Math.floor(
+                                (new Date() - new Date(pr.updated_at)) / (1000 * 60 * 60 * 24)
+                                )}d ago
+                            </span>
+                            </a>
+                        ))}
+                    </div>
+                </div>
+                        )}
             </div>
-            </div>
+        </div>
+        
         )}
 
-        </div>
+    </div>
     )
 }
 
