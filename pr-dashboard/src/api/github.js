@@ -58,3 +58,16 @@ export async function getOpenPRs(token, owner, repo) {
     )
     return res.json()
 }
+
+export async function getPRDetails(token, owner, repo, pullNumber) {
+  const res = await fetch(
+    `${BASE_URL}/repos/${owner}/${repo}/pulls/${pullNumber}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json'
+      }
+    }
+  )
+  return res.json()
+}
