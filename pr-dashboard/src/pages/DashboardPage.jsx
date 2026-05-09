@@ -3,221 +3,252 @@ import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
 import { getUser, getUserRepos, getRepoPRs, getPRReviews, getOpenPRs } from '../api/github'
 import { computeCycleTime, computeReviewLag, computeReviewerLoad, flagStale } from '../metrics/computeMetrics'
-import CycleTimeChart from '../components/CycleTimeChart'
 import Navbar from '../components/Navbar'
-import SkeletonCard from '../components/SkeletonCard'
+import CycleTimeChart from '../components/CycleTimeChart'
 import PRSizeChart from '../components/PRSizeChart'
+import SkeletonCard from '../components/SkeletonCard'
 
-function DashboardPage() {
-    const token = useAuthStore((state) => state.token)
-    const logout = useAuthStore((state) => state.logout)
-    const navigate = useNavigate()
-    const [prs, setPrs] = useState([])
-    const [stalePRs, setStalePRs] = useState([])
-    const [prSizes, setPrSizes] = useState([])
+const font = "'DM Sans', sans-serif"
 
-    const [user, setUser] = useState(null)
-    const [repos, setRepos] = useState([])
-    const [selectedRepo, setSelectedRepo] = useState(null)
-    const [metrics, setMetrics] = useState(null)
-    const [loading, setLoading] = useState(false)
-
-    useEffect(() => {
-        if (!token) {
-        navigate('/')
-        return
-        }
-        getUser(token).then(setUser)
-        getUserRepos(token).then(setRepos)
-    }, [token])
-
-    const handleRepoSelect = async (repo) => {
-        setSelectedRepo(repo)
-        setLoading(true)
-
-        const prs = await getRepoPRs(token, repo.owner.login, repo.name)
-        setPrs(prs)
-        const sizes = prs.map(pr => ({
-            number: pr.number,
-            additions: pr.additions || 0,
-            deletions: pr.deletions || 0,
-            total: (pr.additions || 0) + (pr.deletions || 0)
-        }))
-        setPrSizes(sizes)
-        const openPRs = await getOpenPRs(token, repo.owner.login, repo.name)
-        const stale = openPRs.filter(pr => flagStale(pr))
-        setStalePRs(stale)
-
-        const reviewsPerPR = await Promise.all(
-        prs.map(pr => getPRReviews(token, repo.owner.login, repo.name, pr.number))
-        )
-
-        const cycleTimes = prs
-        .map(pr => computeCycleTime(pr))
-        .filter(v => v !== null)
-
-        const reviewLags = prs
-        .map((pr, i) => computeReviewLag(pr, reviewsPerPR[i]))
-        .filter(v => v !== null)
-
-        const avgCycleTime = cycleTimes.length
-        ? Math.round(cycleTimes.reduce((a, b) => a + b, 0) / cycleTimes.length)
-        : 0
-
-        const avgReviewLag = reviewLags.length
-        ? Math.round(reviewLags.reduce((a, b) => a + b, 0) / reviewLags.length)
-        : 0
-
-        const reviewerLoad = computeReviewerLoad(prs, reviewsPerPR)
-
-        setMetrics({ avgCycleTime, avgReviewLag, reviewerLoad, totalPRs: prs.length })
-        setLoading(false)
-    }
-
-    const handleLogout = () => {
-        logout()
-        navigate('/')
-    }
-
-if (!user) {
+function MetricCard({ label, value, sub, accent }) {
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif" }}
-      className="min-h-screen bg-[#080C14] flex items-center justify-center">
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-      <div className="text-center">
-        <div className="flex items-center justify-center gap-1.5 mb-6">
-          {[0, 1, 2].map(i => (
-            <div key={i} className="w-2 h-2 bg-blue-400 rounded-full"
-              style={{ animation: 'bounce 1s infinite', animationDelay: `${i * 0.15}s` }} />
-          ))}
-        </div>
-        <p className="text-white font-medium">Loading your repos</p>
-        <p className="text-gray-500 text-sm mt-1">Fetching from GitHub...</p>
-      </div>
-      <style>{`
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); opacity: 0.4; }
-          50% { transform: translateY(-8px); opacity: 1; }
-        }
-      `}</style>
+    <div className="relative bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5 overflow-hidden group hover:bg-white/[0.05] transition-all">
+      <div className={`absolute top-0 left-0 w-1 h-full rounded-l-2xl ${accent}`} />
+      <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">{label}</p>
+      <p className="text-3xl font-bold text-white" style={{ fontFamily: "'DM Mono', monospace" }}>{value}</p>
+      {sub && <p className="text-xs text-gray-600 mt-1">{sub}</p>}
     </div>
   )
 }
 
-    return (
-    <div className="min-h-screen bg-gray-950 text-white">
-    <Navbar user={user} />
-        <div className="p-8">
-
-        <div className="mb-8">
-            <h2 className="text-lg font-semibold mb-4">Select a repo</h2>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            {repos.map(repo => (
-                <button
-                key={repo.id}
-                onClick={() => handleRepoSelect(repo)}
-                className={`text-left p-4 rounded-lg border transition ${
-                    selectedRepo?.id === repo.id
-                    ? 'border-blue-500 bg-blue-500/10'
-                    : 'border-gray-700 bg-gray-900 hover:border-gray-500'
-                }`}
-                >
-                <p className="font-medium text-sm">{repo.name}</p>
-                <p className="text-gray-400 text-xs mt-1">
-                    {repo.private ? 'Private' : 'Public'}
-                </p>
-                </button>
-            ))}
-            </div>
-        </div>
-
-            {loading && (
-            <div className="grid grid-cols-3 gap-4">
-                <SkeletonCard />
-                <SkeletonCard />
-                <SkeletonCard />
-            </div>
-            )}
-
-        {metrics && !loading && (
-        <div>
-            <h2 className="text-lg font-semibold mb-4">
-                Metrics — {selectedRepo.name}
-            </h2>
-
-            <div className="grid grid-cols-3 gap-4 mb-8">
-                <div className="bg-gray-900 rounded-lg p-4">
-                <p className="text-gray-400 text-sm mb-1">Avg cycle time</p>
-                <p className="text-2xl font-bold">{metrics.avgCycleTime}h</p>
-                </div>
-                <div className="bg-gray-900 rounded-lg p-4">
-                <p className="text-gray-400 text-sm mb-1">Avg review lag</p>
-                <p className="text-2xl font-bold">{metrics.avgReviewLag}h</p>
-                </div>
-                <div className="bg-gray-900 rounded-lg p-4">
-                <p className="text-gray-400 text-sm mb-1">PRs analyzed</p>
-                <p className="text-2xl font-bold">{metrics.totalPRs}</p>
-                </div>
-            </div>
-
-            <h3 className="font-semibold mb-3">Reviewer load</h3>
-            <div className="flex flex-col gap-2">
-                {metrics.reviewerLoad.map(({ login, count }) => (
-                <div key={login} className="flex items-center gap-3">
-                    <span className="text-sm w-32 text-gray-300">{login}</span>
-                    <div className="flex-1 bg-gray-800 rounded-full h-2">
-                    <div
-                        className="bg-blue-500 h-2 rounded-full"
-                        style={{
-                        width: `${(count / metrics.reviewerLoad[0].count) * 100}%`
-                        }}
-                    />
-                    </div>
-                    <span className="text-sm text-gray-400">{count}</span>
-                </div>
-                ))}
-                <CycleTimeChart prs={prs} />
-                <PRSizeChart prSizes={prSizes} />
-                {stalePRs.length > 0 && (
-                    <div className="mt-6">
-                        <h3 className="font-semibold mb-3">
-                        Stale PRs
-                        <span className="ml-2 text-sm text-red-400">
-                            {stalePRs.length} need attention
-                        </span>
-                        </h3>
-                        <div className="flex flex-col gap-2">
-                        {stalePRs.map(pr => (
-                            <a
-                            key={pr.id}
-                            href={pr.html_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="bg-gray-900 rounded-lg p-4 flex items-center justify-between hover:bg-gray-800 transition"
-                            >
-                            <div>
-                                <p className="text-sm font-medium">{pr.title}</p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                by @{pr.user.login}
-                                </p>
-                            </div>
-                            <span className="text-xs text-red-400 flex-shrink-0 ml-4">
-                                {Math.floor(
-                                (new Date() - new Date(pr.updated_at)) / (1000 * 60 * 60 * 24)
-                                )}d ago
-                            </span>
-                            </a>
-                        ))}
-                    </div>
-                </div>
-                        )}
-            </div>
-        </div>
-        
-        )}
-    </div>
-    </div>
-    )
+function RepoCard({ repo, selected, onClick }) {
+  return (
+    <button onClick={onClick}
+      className={`w-full text-left px-4 py-3 rounded-xl border transition-all group ${
+        selected
+          ? 'border-blue-500/50 bg-blue-500/10 text-white'
+          : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] text-gray-300'
+      }`}>
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium truncate">{repo.name}</p>
+        <span className={`text-[10px] px-2 py-0.5 rounded-full flex-shrink-0 ml-2 ${
+          repo.private ? 'bg-yellow-500/10 text-yellow-500' : 'bg-green-500/10 text-green-400'
+        }`}>
+          {repo.private ? 'Private' : 'Public'}
+        </span>
+      </div>
+      {repo.language && (
+        <p className="text-xs text-gray-600 mt-1">{repo.language}</p>
+      )}
+    </button>
+  )
 }
 
-export default DashboardPage
+export default function DashboardPage() {
+  const token = useAuthStore(s => s.token)
+  const logout = useAuthStore(s => s.logout)
+  const navigate = useNavigate()
+
+  const [user, setUser] = useState(null)
+  const [repos, setRepos] = useState([])
+  const [selectedRepo, setSelectedRepo] = useState(null)
+  const [metrics, setMetrics] = useState(null)
+  const [prs, setPrs] = useState([])
+  const [prSizes, setPrSizes] = useState([])
+  const [stalePRs, setStalePRs] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    if (!token) { navigate('/'); return }
+    getUser(token).then(setUser)
+    getUserRepos(token).then(setRepos)
+  }, [token])
+
+  const handleRepoSelect = async (repo) => {
+    setSelectedRepo(repo)
+    setMetrics(null)
+    setLoading(true)
+
+    const prsData = await getRepoPRs(token, repo.owner.login, repo.name)
+    const reviewsPerPR = await Promise.all(
+      prsData.map(pr => getPRReviews(token, repo.owner.login, repo.name, pr.number))
+    )
+    const openPRs = await getOpenPRs(token, repo.owner.login, repo.name)
+
+    const cycleTimes = prsData.map(pr => computeCycleTime(pr)).filter(v => v !== null)
+    const reviewLags = prsData.map((pr, i) => computeReviewLag(pr, reviewsPerPR[i])).filter(v => v !== null)
+
+    const avgCycleTime = cycleTimes.length
+      ? Math.round(cycleTimes.reduce((a, b) => a + b, 0) / cycleTimes.length) : 0
+    const avgReviewLag = reviewLags.length
+      ? Math.round(reviewLags.reduce((a, b) => a + b, 0) / reviewLags.length) : 0
+
+    setPrs(prsData)
+    setPrSizes(prsData.map(pr => ({ number: pr.number, total: (pr.additions || 0) + (pr.deletions || 0) })))
+    setStalePRs(openPRs.filter(pr => flagStale(pr)))
+    setMetrics({ avgCycleTime, avgReviewLag, totalPRs: prsData.length, reviewerLoad: computeReviewerLoad(prsData, reviewsPerPR) })
+    setLoading(false)
+  }
+
+  const filteredRepos = repos.filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
+
+  if (!user) {
+    return (
+      <div style={{ fontFamily: font }} className="min-h-screen bg-[#080C14] flex items-center justify-center">
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-1.5 mb-6">
+            {[0,1,2].map(i => (
+              <div key={i} className="w-2 h-2 bg-blue-400 rounded-full"
+                style={{ animation: 'bounce 1s infinite', animationDelay: `${i * 0.15}s` }} />
+            ))}
+          </div>
+          <p className="text-white font-medium">Loading your workspace</p>
+          <p className="text-gray-500 text-sm mt-1">Fetching from GitHub...</p>
+        </div>
+        <style>{`@keyframes bounce { 0%,100%{transform:translateY(0);opacity:.4} 50%{transform:translateY(-8px);opacity:1} }`}</style>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ fontFamily: font }} className="min-h-screen bg-[#080C14] text-white">
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+      <style>{`@keyframes bounce { 0%,100%{transform:translateY(0);opacity:.4} 50%{transform:translateY(-8px);opacity:1} }`}</style>
+
+      <Navbar user={user} />
+
+      <div className="flex h-[calc(100vh-57px)]">
+
+        {/* sidebar */}
+        <aside className="w-72 flex-shrink-0 border-r border-white/[0.06] flex flex-col">
+          <div className="p-4 border-b border-white/[0.06]">
+            <input
+              type="text"
+              placeholder="Search repos..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 transition"
+            />
+          </div>
+          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-1.5">
+            {filteredRepos.map(repo => (
+              <RepoCard
+                key={repo.id}
+                repo={repo}
+                selected={selectedRepo?.id === repo.id}
+                onClick={() => handleRepoSelect(repo)}
+              />
+            ))}
+          </div>
+        </aside>
+
+        {/* main content */}
+        <main className="flex-1 overflow-y-auto">
+          {!selectedRepo && (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-white/[0.03] border border-white/[0.07] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-7 h-7 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <p className="text-gray-400 font-medium">Select a repo to analyze</p>
+                <p className="text-gray-600 text-sm mt-1">Pick one from the sidebar</p>
+              </div>
+            </div>
+          )}
+
+          {selectedRepo && (
+            <div className="p-8">
+              <div className="mb-8">
+                <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Analyzing</p>
+                <h2 className="text-2xl font-bold">{selectedRepo.name}</h2>
+              </div>
+
+              {loading && (
+                <div>
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <SkeletonCard /><SkeletonCard /><SkeletonCard />
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-500 text-sm">
+                    <div className="flex gap-1">
+                      {[0,1,2].map(i => (
+                        <div key={i} className="w-1.5 h-1.5 bg-blue-400 rounded-full"
+                          style={{ animation: 'bounce 1s infinite', animationDelay: `${i * 0.15}s` }} />
+                      ))}
+                    </div>
+                    Fetching PR data...
+                  </div>
+                </div>
+              )}
+
+              {metrics && !loading && (
+                <div>
+                  {/* metric cards */}
+                  <div className="grid grid-cols-3 gap-4 mb-8">
+                    <MetricCard label="Avg Cycle Time" value={`${metrics.avgCycleTime}h`} sub="first commit → merge" accent="bg-blue-500" />
+                    <MetricCard label="Avg Review Lag" value={`${metrics.avgReviewLag}h`} sub="open → first review" accent="bg-purple-500" />
+                    <MetricCard label="PRs Analyzed" value={metrics.totalPRs} sub="last 50 closed" accent="bg-emerald-500" />
+                  </div>
+
+                  {/* charts side by side */}
+                  <div className="grid grid-cols-2 gap-4 mb-8">
+                    <CycleTimeChart prs={prs} />
+                    <PRSizeChart prSizes={prSizes} />
+                  </div>
+
+                  {/* reviewer load */}
+                  {metrics.reviewerLoad.length > 0 && (
+                    <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 mb-6">
+                      <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Reviewer Load</p>
+                      <div className="flex flex-col gap-3">
+                        {metrics.reviewerLoad.map(({ login, count }) => (
+                          <div key={login} className="flex items-center gap-3">
+                            <span className="text-sm text-gray-300 w-28 truncate">{login}</span>
+                            <div className="flex-1 bg-white/[0.05] rounded-full h-1.5">
+                              <div className="bg-blue-500 h-1.5 rounded-full transition-all"
+                                style={{ width: `${(count / metrics.reviewerLoad[0].count) * 100}%` }} />
+                            </div>
+                            <span className="text-xs text-gray-500 w-8 text-right">{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* stale PRs */}
+                  {stalePRs.length > 0 && (
+                    <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <p className="text-xs text-gray-500 uppercase tracking-widest">Stale PRs</p>
+                        <span className="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full">
+                          {stalePRs.length} need attention
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {stalePRs.map(pr => (
+                          <a key={pr.id} href={pr.html_url} target="_blank" rel="noreferrer"
+                            className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.05] transition group">
+                            <div className="min-w-0">
+                              <p className="text-sm text-white truncate group-hover:text-blue-400 transition">{pr.title}</p>
+                              <p className="text-xs text-gray-600 mt-0.5">@{pr.user.login}</p>
+                            </div>
+                            <span className="text-xs text-red-400 flex-shrink-0 ml-4">
+                              {Math.floor((new Date() - new Date(pr.updated_at)) / (1000 * 60 * 60 * 24))}d ago
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  )
+}
