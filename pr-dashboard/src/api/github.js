@@ -22,7 +22,7 @@ export async function getUserRepos(token) {
 
 export async function getRepoPRs(token, owner, repo) {
   const res = await fetch(
-    `${BASE_URL}/repos/${owner}/${repo}/pulls?state=closed&per_page=50&sort=updated`,
+    `${BASE_URL}/repos/${owner}/${repo}/pulls?state=closed&per_page=100&sort=updated`,
     {
       headers: {
         Authorization: `Bearer ${token}`,

@@ -8,6 +8,7 @@ import CycleTimeChart from '../components/CycleTimeChart'
 import PRSizeChart from '../components/PRSizeChart'
 import SkeletonCard from '../components/SkeletonCard'
 import ActivityHeatmap from '../components/ActivityHeatmap'
+import PRTimeline from '../components/PRTimeline'
 
 
 const font = "'DM Sans', sans-serif"
@@ -63,6 +64,7 @@ export default function DashboardPage() {
     const [customOwner, setCustomOwner] = useState('')
     const [customRepo, setCustomRepo] = useState('')
     const [healthScore, setHealthScore] = useState(null)
+    const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
     if (!token) { navigate('/'); return }
@@ -147,30 +149,30 @@ export default function DashboardPage() {
             />
           </div>
           <div className="px-1 pb-2 border-b border-white/[0.06] mb-2">
-  <p className="text-xs text-gray-600 mb-2 px-1">Test any public repo</p>
-  <div className="flex flex-col gap-1.5">
-    <input
-      type="text"
-      placeholder="owner (e.g. vercel)"
-      value={customOwner}
-      onChange={e => setCustomOwner(e.target.value)}
-      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
-    />
-    <input
-      type="text"
-      placeholder="repo (e.g. next.js)"
-      value={customRepo}
-      onChange={e => setCustomRepo(e.target.value)}
-      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
-    />
-    <button
-      onClick={() => handleRepoSelect({ id: 'custom', name: customRepo, owner: { login: customOwner }, language: null, private: false })}
-      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs py-1.5 rounded-lg transition"
-    >
-      Analyze
-    </button>
-  </div>
-</div>
+                <p className="text-xs text-gray-600 mb-2 px-1">Test any public repo</p>
+                <div className="flex flex-col gap-1.5">
+                    <input
+                    type="text"
+                    placeholder="owner (e.g. vercel)"
+                    value={customOwner}
+                    onChange={e => setCustomOwner(e.target.value)}
+                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
+                    />
+                    <input
+                    type="text"
+                    placeholder="repo (e.g. next.js)"
+                    value={customRepo}
+                    onChange={e => setCustomRepo(e.target.value)}
+                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
+                    />
+                    <button
+                    onClick={() => handleRepoSelect({ id: 'custom', name: customRepo, owner: { login: customOwner }, language: null, private: false })}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs py-1.5 rounded-lg transition"
+                    >
+                    Analyze
+                    </button>
+                </div>
+                </div>
           <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-1.5">
             {filteredRepos.map(repo => (
               <RepoCard
@@ -201,10 +203,22 @@ export default function DashboardPage() {
 
           {selectedRepo && (
             <div className="p-8">
-              <div className="mb-8">
+                <div className="mb-6">
                 <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Analyzing</p>
-                <h2 className="text-2xl font-bold">{selectedRepo.name}</h2>
-              </div>
+                <h2 className="text-2xl font-bold mb-4">{selectedRepo.name}</h2>
+                <div className="flex gap-1 border-b border-white/[0.06]">
+                    {['overview', 'timeline', 'activity'].map(tab => (
+                    <button key={tab} onClick={() => setActiveTab(tab)}
+                        className={`px-4 py-2 text-sm capitalize transition ${
+                        activeTab === tab
+                            ? 'text-white border-b-2 border-blue-500'
+                            : 'text-gray-500 hover:text-gray-300'
+                        }`}>
+                        {tab}
+                    </button>
+                    ))}
+                </div>
+                </div>
 
               {loading && (
                 <div>
@@ -222,126 +236,124 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
-
-              {metrics && !loading && (
+                {metrics && !loading && (
                 <div>
-                    {healthScore !== null && (
-                    <div className="mb-8 bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 flex items-center gap-8">
-                        <div className="relative w-24 h-24 flex-shrink-0">
-                        <svg viewBox="0 0 36 36" className="w-24 h-24 -rotate-90">
-                            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#ffffff08" strokeWidth="3" />
-                            <circle cx="18" cy="18" r="15.9" fill="none"
-                            stroke={healthScore >= 70 ? '#10B981' : healthScore >= 40 ? '#F59E0B' : '#EF4444'}
-                            strokeWidth="3"
-                            strokeDasharray={`${healthScore} 100`}
-                            strokeLinecap="round"
-                            style={{ transition: 'stroke-dasharray 1s ease' }}
-                            />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-2xl font-bold text-white" style={{ fontFamily: "'DM Mono', monospace" }}>
-                            {healthScore}
-                            </span>
-                        </div>
-                        </div>
-                        <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Repo Health Score</p>
-                        <p className="text-xl font-bold mb-1"
-                            style={{ color: healthScore >= 70 ? '#10B981' : healthScore >= 40 ? '#F59E0B' : '#EF4444' }}>
-                            {healthScore >= 70 ? 'Healthy' : healthScore >= 40 ? 'Needs Attention' : 'Critical'}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                            Based on cycle time, review lag, stale PRs and reviewer distribution.
-                        </p>
-                        </div>
-                    </div>
-                    )}
-                  {/* metric cards */}
-                  <div className="grid grid-cols-3 gap-4 mb-8">
-                    <MetricCard label="Avg Cycle Time" value={`${metrics.avgCycleTime}h`} sub="first commit → merge" accent="bg-blue-500" />
-                    <MetricCard label="Avg Review Lag" value={`${metrics.avgReviewLag}h`} sub="open → first review" accent="bg-purple-500" />
-                    <MetricCard label="PRs Analyzed" value={metrics.totalPRs} sub="last 50 closed" accent="bg-emerald-500" />
-                  </div>
-
-                  {/* charts side by side */}
-                  <div className="grid grid-cols-2 gap-4 mb-8">
-                    <CycleTimeChart prs={prs} />
-                    <PRSizeChart prSizes={prSizes} />
-                  </div>
-                  
-                  <ActivityHeatmap prs={prs} />
-
-                  {/* reviewer load */}
-                    {metrics.reviewerLoad.length > 0 && (
-                    <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 mb-6">
-                        <p className="text-xs text-gray-500 uppercase tracking-widest mb-5">Reviewer Load</p>
-                        <div className="grid grid-cols-2 gap-3">
-                        {metrics.reviewerLoad.slice(0, 8).map(({ login, count }, i) => (
-                            <div key={login} className="flex items-center gap-3 bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-3">
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                                {login[0].toUpperCase()}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm text-white truncate">{login}</span>
-                                <span className="text-xs text-gray-500 ml-2 flex-shrink-0">{count} reviews</span>
-                                </div>
-                                <div className="w-full bg-white/[0.05] rounded-full h-1">
-                                <div className="h-1 rounded-full transition-all"
-                                    style={{
-                                    width: `${(count / metrics.reviewerLoad[0].count) * 100}%`,
-                                    background: i === 0 ? '#3B82F6' : i === 1 ? '#8B5CF6' : '#6B7280'
-                                    }} />
-                                </div>
-                            </div>
-                            </div>
-                        ))}
-                        </div>
-                    </div>
-                    )}
-
-                  {/* stale PRs */}
-                    <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
-                        <div className="flex items-center justify-between mb-4">
-                        <p className="text-xs text-gray-500 uppercase tracking-widest">Stale PRs</p>
-                        {stalePRs.length > 0 && (
-                        <span className="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full">
-                            {stalePRs.length} need attention
-                        </span>
-                        )}
-                    </div>
-
-                    {stalePRs.length === 0 ? (
-                        <div className="flex items-center gap-3 py-2">
-                        <div className="w-7 h-7 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                            <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    {activeTab === 'overview' && (
+                    <div>
+                        {healthScore !== null && (
+                        <div className="mb-8 bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 flex items-center gap-8">
+                            <div className="relative w-24 h-24 flex-shrink-0">
+                            <svg viewBox="0 0 36 36" className="w-24 h-24 -rotate-90">
+                                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#ffffff08" strokeWidth="3" />
+                                <circle cx="18" cy="18" r="15.9" fill="none"
+                                stroke={healthScore >= 70 ? '#10B981' : healthScore >= 40 ? '#F59E0B' : '#EF4444'}
+                                strokeWidth="3"
+                                strokeDasharray={`${healthScore} 100`}
+                                strokeLinecap="round"
+                                style={{ transition: 'stroke-dasharray 1s ease' }}
+                                />
                             </svg>
-                        </div>
-                        <div>
-                            <p className="text-sm text-white">All clear</p>
-                            <p className="text-xs text-gray-600 mt-0.5">No stale open PRs — this repo moves fast</p>
-                        </div>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-2">
-                        {stalePRs.map(pr => (
-                            <a key={pr.id} href={pr.html_url} target="_blank" rel="noreferrer"
-                            className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.05] transition group">
-                            <div className="min-w-0">
-                                <p className="text-sm text-white truncate group-hover:text-blue-400 transition">{pr.title}</p>
-                                <p className="text-xs text-gray-600 mt-0.5">@{pr.user.login}</p>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-2xl font-bold text-white" style={{ fontFamily: "'DM Mono', monospace" }}>
+                                {healthScore}
+                                </span>
                             </div>
-                            <span className="text-xs text-red-400 flex-shrink-0 ml-4">
-                                {Math.floor((new Date() - new Date(pr.updated_at)) / (1000 * 60 * 60 * 24))}d ago
-                            </span>
-                            </a>
-                        ))}
+                            </div>
+                            <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Repo Health Score</p>
+                            <p className="text-xl font-bold mb-1"
+                                style={{ color: healthScore >= 70 ? '#10B981' : healthScore >= 40 ? '#F59E0B' : '#EF4444' }}>
+                                {healthScore >= 70 ? 'Healthy' : healthScore >= 40 ? 'Needs Attention' : 'Critical'}
+                            </p>
+                            <p className="text-sm text-gray-500">Based on cycle time, review lag, stale PRs and reviewer distribution.</p>
+                            </div>
                         </div>
-                    )}
+                        )}
+
+                        <div className="grid grid-cols-3 gap-4 mb-8">
+                        <MetricCard label="Avg Cycle Time" value={`${metrics.avgCycleTime}h`} sub="first commit → merge" accent="bg-blue-500" />
+                        <MetricCard label="Avg Review Lag" value={`${metrics.avgReviewLag}h`} sub="open → first review" accent="bg-purple-500" />
+                        <MetricCard label="PRs Analyzed" value={metrics.totalPRs} sub="last 100 closed" accent="bg-emerald-500" />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                        <CycleTimeChart prs={prs} />
+                        <PRSizeChart prSizes={prSizes} />
+                        </div>
+
+                        {metrics.reviewerLoad.length > 0 && (
+                        <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 mb-6">
+                            <p className="text-xs text-gray-500 uppercase tracking-widest mb-5">Reviewer Load</p>
+                            <div className="grid grid-cols-2 gap-3">
+                            {metrics.reviewerLoad.slice(0, 8).map(({ login, count }, i) => (
+                                <div key={login} className="flex items-center gap-3 bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-3">
+                                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                                    {login[0].toUpperCase()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-1">
+                                    <span className="text-sm text-white truncate">{login}</span>
+                                    <span className="text-xs text-gray-500 ml-2 flex-shrink-0">{count} reviews</span>
+                                    </div>
+                                    <div className="w-full bg-white/[0.05] rounded-full h-1">
+                                    <div className="h-1 rounded-full transition-all"
+                                        style={{
+                                        width: `${(count / metrics.reviewerLoad[0].count) * 100}%`,
+                                        background: i === 0 ? '#3B82F6' : i === 1 ? '#8B5CF6' : '#6B7280'
+                                        }} />
+                                    </div>
+                                </div>
+                                </div>
+                            ))}
+                            </div>
+                        </div>
+                        )}
+
+                        <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <p className="text-xs text-gray-500 uppercase tracking-widest">Stale PRs</p>
+                            {stalePRs.length > 0 && (
+                            <span className="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full">
+                                {stalePRs.length} need attention
+                            </span>
+                            )}
+                        </div>
+                        {stalePRs.length === 0 ? (
+                            <div className="flex items-center gap-3 py-2">
+                            <div className="w-7 h-7 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                                <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p className="text-sm text-white">All clear</p>
+                                <p className="text-xs text-gray-600 mt-0.5">No stale open PRs — this repo moves fast</p>
+                            </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-2">
+                            {stalePRs.map(pr => (
+                                <a key={pr.id} href={pr.html_url} target="_blank" rel="noreferrer"
+                                className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.05] transition group">
+                                <div className="min-w-0">
+                                    <p className="text-sm text-white truncate group-hover:text-blue-400 transition">{pr.title}</p>
+                                    <p className="text-xs text-gray-600 mt-0.5">@{pr.user.login}</p>
+                                </div>
+                                <span className="text-xs text-red-400 flex-shrink-0 ml-4">
+                                    {Math.floor((new Date() - new Date(pr.updated_at)) / (1000 * 60 * 60 * 24))}d ago
+                                </span>
+                                </a>
+                            ))}
+                            </div>
+                        )}
+                        </div>
                     </div>
+                    )}
+
+                    {activeTab === 'timeline' && <PRTimeline prs={prs} />}
+                    {activeTab === 'activity' && <ActivityHeatmap prs={prs} />}
                 </div>
-              )}
+)}
             </div>
           )}
         </main>
