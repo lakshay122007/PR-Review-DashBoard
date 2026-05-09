@@ -6,6 +6,7 @@ import { computeCycleTime, computeReviewLag, computeReviewerLoad, flagStale } fr
 import CycleTimeChart from '../components/CycleTimeChart'
 import Navbar from '../components/Navbar'
 import SkeletonCard from '../components/SkeletonCard'
+import PRSizeChart from '../components/PRSizeChart'
 
 function DashboardPage() {
     const token = useAuthStore((state) => state.token)
@@ -13,6 +14,7 @@ function DashboardPage() {
     const navigate = useNavigate()
     const [prs, setPrs] = useState([])
     const [stalePRs, setStalePRs] = useState([])
+    const [prSizes, setPrSizes] = useState([])
 
     const [user, setUser] = useState(null)
     const [repos, setRepos] = useState([])
@@ -35,6 +37,13 @@ function DashboardPage() {
 
         const prs = await getRepoPRs(token, repo.owner.login, repo.name)
         setPrs(prs)
+        const sizes = prs.map(pr => ({
+            number: pr.number,
+            additions: pr.additions || 0,
+            deletions: pr.deletions || 0,
+            total: (pr.additions || 0) + (pr.deletions || 0)
+        }))
+        setPrSizes(sizes)
         const openPRs = await getOpenPRs(token, repo.owner.login, repo.name)
         const stale = openPRs.filter(pr => flagStale(pr))
         setStalePRs(stale)
@@ -151,6 +160,7 @@ function DashboardPage() {
                 </div>
                 ))}
                 <CycleTimeChart prs={prs} />
+                <PRSizeChart prSizes={prSizes} />
                 {stalePRs.length > 0 && (
                     <div className="mt-6">
                         <h3 className="font-semibold mb-3">
