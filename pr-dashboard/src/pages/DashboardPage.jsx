@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
 import { getUser, getUserRepos, getRepoPRs, getPRReviews, getOpenPRs } from '../api/github'
-import { computeCycleTime, computeReviewLag, computeReviewerLoad, flagStale } from '../metrics/computeMetrics'
+import { computeCycleTime, computeReviewLag, computeReviewerLoad, flagStale, computeHealthScore } from '../metrics/computeMetrics'
 import Navbar from '../components/Navbar'
 import CycleTimeChart from '../components/CycleTimeChart'
 import PRSizeChart from '../components/PRSizeChart'
 import SkeletonCard from '../components/SkeletonCard'
+import ActivityHeatmap from '../components/ActivityHeatmap'
+
 
 const font = "'DM Sans', sans-serif"
 
@@ -60,6 +62,7 @@ export default function DashboardPage() {
     const [search, setSearch] = useState('')
     const [customOwner, setCustomOwner] = useState('')
     const [customRepo, setCustomRepo] = useState('')
+    const [healthScore, setHealthScore] = useState(null)
 
   useEffect(() => {
     if (!token) { navigate('/'); return }
@@ -85,6 +88,15 @@ export default function DashboardPage() {
       ? Math.round(cycleTimes.reduce((a, b) => a + b, 0) / cycleTimes.length) : 0
     const avgReviewLag = reviewLags.length
       ? Math.round(reviewLags.reduce((a, b) => a + b, 0) / reviewLags.length) : 0
+
+        const score = computeHealthScore({
+        avgCycleTime,
+        avgReviewLag,
+        stalePRs: openPRs.filter(pr => flagStale(pr)),
+        reviewerLoad: computeReviewerLoad(prsData, reviewsPerPR),
+        totalPRs: prsData.length
+    })
+    setHealthScore(score)
 
     setPrs(prsData)
     setPrSizes(prsData.map(pr => ({ number: pr.number, total: (pr.additions || 0) + (pr.deletions || 0) })))
@@ -213,6 +225,37 @@ export default function DashboardPage() {
 
               {metrics && !loading && (
                 <div>
+                    {healthScore !== null && (
+                    <div className="mb-8 bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 flex items-center gap-8">
+                        <div className="relative w-24 h-24 flex-shrink-0">
+                        <svg viewBox="0 0 36 36" className="w-24 h-24 -rotate-90">
+                            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#ffffff08" strokeWidth="3" />
+                            <circle cx="18" cy="18" r="15.9" fill="none"
+                            stroke={healthScore >= 70 ? '#10B981' : healthScore >= 40 ? '#F59E0B' : '#EF4444'}
+                            strokeWidth="3"
+                            strokeDasharray={`${healthScore} 100`}
+                            strokeLinecap="round"
+                            style={{ transition: 'stroke-dasharray 1s ease' }}
+                            />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-2xl font-bold text-white" style={{ fontFamily: "'DM Mono', monospace" }}>
+                            {healthScore}
+                            </span>
+                        </div>
+                        </div>
+                        <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Repo Health Score</p>
+                        <p className="text-xl font-bold mb-1"
+                            style={{ color: healthScore >= 70 ? '#10B981' : healthScore >= 40 ? '#F59E0B' : '#EF4444' }}>
+                            {healthScore >= 70 ? 'Healthy' : healthScore >= 40 ? 'Needs Attention' : 'Critical'}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                            Based on cycle time, review lag, stale PRs and reviewer distribution.
+                        </p>
+                        </div>
+                    </div>
+                    )}
                   {/* metric cards */}
                   <div className="grid grid-cols-3 gap-4 mb-8">
                     <MetricCard label="Avg Cycle Time" value={`${metrics.avgCycleTime}h`} sub="first commit → merge" accent="bg-blue-500" />
@@ -225,6 +268,8 @@ export default function DashboardPage() {
                     <CycleTimeChart prs={prs} />
                     <PRSizeChart prSizes={prSizes} />
                   </div>
+                  
+                  <ActivityHeatmap prs={prs} />
 
                   {/* reviewer load */}
                     {metrics.reviewerLoad.length > 0 && (

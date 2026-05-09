@@ -35,3 +35,17 @@ export function computeCycleTime(pr) {
         .map(([login, count]) => ({ login, count }))
         .sort((a, b) => b.count - a.count)
 }
+
+export function computeHealthScore({ avgCycleTime, avgReviewLag, stalePRs, reviewerLoad, totalPRs }) {
+  if (totalPRs === 0) return 0
+    const cycleScore = Math.max(0, Math.min(100, 100 - (avgCycleTime / 168) * 100))
+    const lagScore = Math.max(0, Math.min(100, 100 - (avgReviewLag / 48) * 100))
+
+    const staleScore = Math.max(0, 100 - stalePRs.length * 20)
+
+    const distScore = reviewerLoad.length > 1
+        ? Math.min(100, reviewerLoad.length * 15)
+        : 20
+
+    return Math.round((cycleScore * 0.35) + (lagScore * 0.30) + (staleScore * 0.20) + (distScore * 0.15))
+}
