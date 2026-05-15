@@ -1,68 +1,47 @@
 # PR Dashboard
 
-A GitHub-connected dashboard that surfaces the metrics your team actually needs — cycle time, review lag, reviewer load, and stale PRs. Built because GitHub's native interface tells you what your PRs are, not how healthy your PR process is.
+A GitHub-connected dashboard that surfaces the metrics engineering teams actually need — cycle time, review lag, reviewer load, and stale PRs.
 
-## What it does
+**Live at:** https://pr-dashboard-puce.vercel.app
 
-- Shows average cycle time (first commit to merge) across your repos
-- Tracks review lag — how long PRs sit before someone looks at them
-- Visualizes reviewer load so bottlenecks are obvious
-- Flags stale PRs that have gone quiet
-- Trends cycle time week over week so you can see if things are improving
+---
 
-## Tech stack
+## The problem
 
-- React + Vite
-- Tailwind CSS
-- Recharts
-- Zustand
-- GitHub OAuth + REST API
-- Deployed on Vercel
+GitHub shows you what your PRs are. It doesn't show you where your code is getting stuck. Most teams have no idea how long PRs sit before someone reviews them, who's doing most of the reviewing, or which PRs have gone cold. This dashboard answers those questions.
 
-## Running locally
+---
 
-Clone the repo and install dependencies:
+## What you get
 
-```bash
-git clone https://github.com/your-username/pr-dashboard.git
-cd pr-dashboard
-npm install
-```
+**Repo Health Score** — a single 0–100 number calculated from cycle time, review lag, stale PRs, and reviewer distribution.
 
-Create a `.env` file in the root:
+**Cycle Time** — average time from first commit to merge, with a trend chart so you can see if things are improving.
 
-```
-VITE_GITHUB_CLIENT_ID=your_client_id
-VITE_GITHUB_REDIRECT_URI=http://localhost:5173/callback
-```
+**Review Lag** — how long PRs sit before someone looks at them.
 
-Start the dev server:
+**Reviewer Load** — who is doing all the reviews. Bottlenecks become immediately obvious.
 
-```bash
-npm run dev
-```
+**PR Size Distribution** — small, medium, and large PRs at a glance. Oversized PRs are one of the biggest causes of slow reviews.
 
-Open `http://localhost:5173`.
+**Stale PRs** — open PRs that haven't been touched in 5+ days.
 
-## GitHub OAuth setup
+**Activity Heatmap** — which day of the week your team merges the most.
 
-1. Go to GitHub Settings > Developer Settings > OAuth Apps
-2. Create a new OAuth App
-3. Set the homepage URL to `http://localhost:5173`
-4. Set the callback URL to `http://localhost:5173/callback`
-5. Copy the client ID into your `.env` file
+**PR Timeline** — Gantt-style view of recent merged PRs, color coded by how long they took.
 
-## Project structure
+**Any public repo** — not just yours. Type any owner and repo name to analyze any public GitHub project.
 
-```
-src/
-  api/          GitHub API calls
-  components/   Reusable UI components
-  hooks/        Custom React hooks
-  pages/        LoginPage, DashboardPage
-  store/        Zustand auth store
-```
+---
 
-## Why I built this
+## How to use it
 
-Most CI/CD and project management tools show you task status. None of them clearly show you where time is being lost in the review process. This dashboard tries to answer one question: where is your team's code getting stuck before it ships?
+Go to https://pr-dashboard-puce.vercel.app, sign in with GitHub, and select a repo from the sidebar. That's it.
+
+The app only reads your repo and PR data. It never writes anything to GitHub.
+
+---
+
+## Tech
+
+React, Tailwind CSS, Recharts, Zustand, GitHub OAuth 2.0, Vercel.
