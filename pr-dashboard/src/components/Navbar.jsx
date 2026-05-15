@@ -20,7 +20,7 @@ function Navbar({ user }) {
             </svg>
             </div>
             <span className="font-semibold text-white text-sm">PR Dashboard</span>
-            <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full">beta</span>
+            <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full">v1.0</span>
         </div>
 
         {user && (
