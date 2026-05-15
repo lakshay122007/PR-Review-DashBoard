@@ -25,23 +25,32 @@ function MetricCard({ label, value, sub, accent }) {
 }
 
 function RepoCard({ repo, selected, onClick }) {
+  const langColors = {
+    JavaScript: '#F7DF1E', TypeScript: '#3178C6', Python: '#3776AB',
+    Go: '#00ADD8', Rust: '#CE4A16', HTML: '#E34F26', CSS: '#1572B6'
+  }
+
   return (
     <button onClick={onClick}
-      className={`w-full text-left px-4 py-3 rounded-xl border transition-all group ${
+      className={`w-full text-left px-3 py-2.5 rounded-lg border transition-all ${
         selected
-          ? 'border-blue-500/50 bg-blue-500/10 text-white'
-          : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] text-gray-300'
+          ? 'border-blue-500/40 bg-blue-500/10 text-white'
+          : 'border-transparent hover:bg-white/[0.04] text-gray-400 hover:text-white'
       }`}>
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium truncate">{repo.name}</p>
-        <span className={`text-[10px] px-2 py-0.5 rounded-full flex-shrink-0 ml-2 ${
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium truncate">{repo.name}</p>
+        <span className={`text-[9px] px-1.5 py-0.5 rounded flex-shrink-0 font-medium ${
           repo.private ? 'bg-yellow-500/10 text-yellow-500' : 'bg-green-500/10 text-green-400'
         }`}>
           {repo.private ? 'Private' : 'Public'}
         </span>
       </div>
       {repo.language && (
-        <p className="text-xs text-gray-600 mt-1">{repo.language}</p>
+        <div className="flex items-center gap-1.5 mt-1">
+          <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+            style={{ background: langColors[repo.language] || '#6B7280' }} />
+          <p className="text-[10px] text-gray-600">{repo.language}</p>
+        </div>
       )}
     </button>
   )
@@ -138,42 +147,47 @@ export default function DashboardPage() {
       <div className="flex h-[calc(100vh-57px)]">
 
         {/* sidebar */}
-        <aside className="w-72 flex-shrink-0 border-r border-white/[0.06] flex flex-col">
-          <div className="p-4 border-b border-white/[0.06]">
+        <aside className="w-64 flex-shrink-0 border-r border-white/[0.06] flex flex-col bg-[#060A11]">
+          <div className="p-3 border-b border-white/[0.06]">
             <input
               type="text"
               placeholder="Search repos..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 transition"
+              className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40 transition"
             />
           </div>
-          <div className="px-1 pb-2 border-b border-white/[0.06] mb-2">
-                <p className="text-xs text-gray-600 mb-2 px-1">Test any public repo</p>
-                <div className="flex flex-col gap-1.5">
-                    <input
-                    type="text"
-                    placeholder="owner (e.g. vercel)"
-                    value={customOwner}
-                    onChange={e => setCustomOwner(e.target.value)}
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
-                    />
-                    <input
-                    type="text"
-                    placeholder="repo (e.g. next.js)"
-                    value={customRepo}
-                    onChange={e => setCustomRepo(e.target.value)}
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
-                    />
-                    <button
-                    onClick={() => handleRepoSelect({ id: 'custom', name: customRepo, owner: { login: customOwner }, language: null, private: false })}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs py-1.5 rounded-lg transition"
-                    >
-                    Analyze
-                    </button>
-                </div>
-                </div>
-          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-1.5">
+
+          <div className="p-3 border-b border-white/[0.06]">
+            <p className="text-[10px] text-gray-600 uppercase tracking-widest mb-2">Analyze any public repo</p>
+            <div className="flex flex-col gap-1.5">
+              <input
+                type="text"
+                placeholder="owner (e.g. vercel)"
+                value={customOwner}
+                onChange={e => setCustomOwner(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40 transition"
+              />
+              <input
+                type="text"
+                placeholder="repo (e.g. next.js)"
+                value={customRepo}
+                onChange={e => setCustomRepo(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40 transition"
+              />
+              <button
+                onClick={() => handleRepoSelect({ id: 'custom', name: customRepo, owner: { login: customOwner }, language: null, private: false })}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs py-1.5 rounded-lg transition font-medium">
+                Analyze
+              </button>
+            </div>
+          </div>
+
+          <div className="p-2 border-b border-white/[0.06]">
+            <p className="text-[10px] text-gray-600 uppercase tracking-widest px-2 py-1">Your repos</p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
             {filteredRepos.map(repo => (
               <RepoCard
                 key={repo.id}
