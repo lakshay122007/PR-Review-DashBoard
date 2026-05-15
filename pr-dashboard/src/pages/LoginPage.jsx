@@ -17,7 +17,7 @@ const FEATURES = [
 
 export default function LoginPage() {
   const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID
-  const redirectUri = 'http://localhost:3000/callback'
+  const redirectUri = 'https://pr-dashboard-puce.vercel.app/callback'
   const [wordIndex, setWordIndex] = useState(0)
   const [displayed, setDisplayed] = useState('')
   const [deleting, setDeleting] = useState(false)
