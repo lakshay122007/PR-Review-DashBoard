@@ -74,6 +74,7 @@ export default function DashboardPage() {
     const [customRepo, setCustomRepo] = useState('')
     const [healthScore, setHealthScore] = useState(null)
     const [activeTab, setActiveTab] = useState('overview')
+    const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     if (!token) { navigate('/'); return }
@@ -147,57 +148,96 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row h-auto md:h-[calc(100vh-57px)]">
 
         {/* sidebar */}
-        <aside className="w-full md:w-64 flex-shrink-0 border-b md:border-b-0 md:border-r border-white/[0.06] flex flex-col bg-[#060A11] max-h-64 md:max-h-full">
-          <div className="p-3 border-b border-white/[0.06]">
-            <input
-              type="text"
-              placeholder="Search repos..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40 transition"
-            />
+        <>
+          {/* mobile toggle button */}
+          <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-[#060A11]">
+            <p className="text-xs text-gray-500 uppercase tracking-widest">
+              {selectedRepo ? selectedRepo.name : 'Select a repo'}
+            </p>
+            <button onClick={() => setSidebarOpen(true)}
+              className="text-xs bg-white/[0.05] border border-white/[0.08] px-3 py-1.5 rounded-lg text-gray-300">
+              Browse repos
+            </button>
           </div>
 
-          <div className="p-3 border-b border-white/[0.06]">
-            <p className="text-[10px] text-gray-600 uppercase tracking-widest mb-2">Analyze any public repo</p>
-            <div className="flex flex-col gap-1.5">
-              <input
-                type="text"
-                placeholder="owner (e.g. vercel)"
-                value={customOwner}
-                onChange={e => setCustomOwner(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40 transition"
-              />
-              <input
-                type="text"
-                placeholder="repo (e.g. next.js)"
-                value={customRepo}
-                onChange={e => setCustomRepo(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40 transition"
-              />
-              <button
-                onClick={() => handleRepoSelect({ id: 'custom', name: customRepo, owner: { login: customOwner }, language: null, private: false })}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs py-1.5 rounded-lg transition font-medium">
-                Analyze
-              </button>
+          {/* mobile bottom sheet overlay */}
+          {sidebarOpen && (
+            <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
+              <div className="absolute inset-0 bg-black/60" onClick={() => setSidebarOpen(false)} />
+              <div className="relative bg-[#060A11] border-t border-white/[0.08] rounded-t-2xl max-h-[80vh] flex flex-col z-10">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+                  <p className="text-sm font-medium text-white">Your repos</p>
+                  <button onClick={() => setSidebarOpen(false)} className="text-gray-500 hover:text-white text-lg">✕</button>
+                </div>
+                <div className="p-3 border-b border-white/[0.06]">
+                  <input
+                    type="text"
+                    placeholder="Search repos..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40 transition"
+                  />
+                </div>
+                <div className="p-3 border-b border-white/[0.06]">
+                  <p className="text-[10px] text-gray-600 uppercase tracking-widest mb-2">Analyze any public repo</p>
+                  <div className="flex flex-col gap-1.5">
+                    <input type="text" placeholder="owner (e.g. vercel)" value={customOwner}
+                      onChange={e => setCustomOwner(e.target.value)}
+                      className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40 transition" />
+                    <input type="text" placeholder="repo (e.g. next.js)" value={customRepo}
+                      onChange={e => setCustomRepo(e.target.value)}
+                      className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40 transition" />
+                    <button
+                      onClick={() => { handleRepoSelect({ id: 'custom', name: customRepo, owner: { login: customOwner }, language: null, private: false }); setSidebarOpen(false) }}
+                      className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs py-1.5 rounded-lg transition font-medium">
+                      Analyze
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+                  {filteredRepos.map(repo => (
+                    <RepoCard key={repo.id} repo={repo} selected={selectedRepo?.id === repo.id}
+                      onClick={() => { handleRepoSelect(repo); setSidebarOpen(false) }} />
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="p-2 border-b border-white/[0.06]">
-            <p className="text-[10px] text-gray-600 uppercase tracking-widest px-2 py-1">Your repos</p>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
-            {filteredRepos.map(repo => (
-              <RepoCard
-                key={repo.id}
-                repo={repo}
-                selected={selectedRepo?.id === repo.id}
-                onClick={() => handleRepoSelect(repo)}
-              />
-            ))}
-          </div>
-        </aside>
+          {/* desktop sidebar */}
+          <aside className="hidden md:flex w-64 flex-shrink-0 border-r border-white/[0.06] flex-col bg-[#060A11] h-full">
+            <div className="p-3 border-b border-white/[0.06]">
+              <input type="text" placeholder="Search repos..." value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40 transition" />
+            </div>
+            <div className="p-3 border-b border-white/[0.06]">
+              <p className="text-[10px] text-gray-600 uppercase tracking-widest mb-2">Analyze any public repo</p>
+              <div className="flex flex-col gap-1.5">
+                <input type="text" placeholder="owner (e.g. vercel)" value={customOwner}
+                  onChange={e => setCustomOwner(e.target.value)}
+                  className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40 transition" />
+                <input type="text" placeholder="repo (e.g. next.js)" value={customRepo}
+                  onChange={e => setCustomRepo(e.target.value)}
+                  className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/40 transition" />
+                <button
+                  onClick={() => handleRepoSelect({ id: 'custom', name: customRepo, owner: { login: customOwner }, language: null, private: false })}
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs py-1.5 rounded-lg transition font-medium">
+                  Analyze
+                </button>
+              </div>
+            </div>
+            <div className="p-2 border-b border-white/[0.06]">
+              <p className="text-[10px] text-gray-600 uppercase tracking-widest px-2 py-1">Your repos</p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+              {filteredRepos.map(repo => (
+                <RepoCard key={repo.id} repo={repo} selected={selectedRepo?.id === repo.id}
+                  onClick={() => handleRepoSelect(repo)} />
+              ))}
+            </div>
+          </aside>
+        </>
 
         {/* main content */}
         <main className="flex-1 overflow-y-auto">
