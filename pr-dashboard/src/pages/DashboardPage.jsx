@@ -144,10 +144,10 @@ export default function DashboardPage() {
 
       <Navbar user={user} />
 
-      <div className="flex h-[calc(100vh-57px)]">
+      <div className="flex flex-col md:flex-row h-auto md:h-[calc(100vh-57px)]">
 
         {/* sidebar */}
-        <aside className="w-64 flex-shrink-0 border-r border-white/[0.06] flex flex-col bg-[#060A11]">
+        <aside className="w-full md:w-64 flex-shrink-0 border-b md:border-b-0 md:border-r border-white/[0.06] flex flex-col bg-[#060A11] max-h-64 md:max-h-full">
           <div className="p-3 border-b border-white/[0.06]">
             <input
               type="text"
@@ -236,7 +236,7 @@ export default function DashboardPage() {
 
               {loading && (
                 <div>
-                  <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     <SkeletonCard /><SkeletonCard /><SkeletonCard />
                   </div>
                   <div className="flex items-center gap-2 text-gray-500 text-sm">
@@ -284,13 +284,13 @@ export default function DashboardPage() {
                         </div>
                         )}
 
-                        <div className="grid grid-cols-3 gap-4 mb-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                         <MetricCard label="Avg Cycle Time" value={`${metrics.avgCycleTime}h`} sub="first commit → merge" accent="bg-blue-500" />
                         <MetricCard label="Avg Review Lag" value={`${metrics.avgReviewLag}h`} sub="open → first review" accent="bg-purple-500" />
                         <MetricCard label="PRs Analyzed" value={metrics.totalPRs} sub="last 100 closed" accent="bg-emerald-500" />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <CycleTimeChart prs={prs} />
                         <PRSizeChart prSizes={prSizes} />
                         </div>
@@ -298,7 +298,7 @@ export default function DashboardPage() {
                         {metrics.reviewerLoad.length > 0 && (
                         <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 mb-6">
                             <p className="text-xs text-gray-500 uppercase tracking-widest mb-5">Reviewer Load</p>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {metrics.reviewerLoad.slice(0, 8).map(({ login, count }, i) => (
                                 <div key={login} className="flex items-center gap-3 bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-3">
                                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold flex-shrink-0">
