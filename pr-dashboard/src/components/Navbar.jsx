@@ -17,7 +17,7 @@ function Navbar({ user }) {
             <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
                 <img src="/logo.svg" className="w-7 h-7 rounded-lg" />
             </div>
-            <span className="font-semibold text-white text-sm">PR Dashboard</span>
+            <span className="font-semibold text-white text-sm">MergeView</span>
             <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full">v1.0</span>
         </div>
 
