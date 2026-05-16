@@ -250,7 +250,12 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <p className="text-gray-400 font-medium">Select a repo to analyze</p>
-                <p className="text-gray-600 text-sm mt-1">Pick one from the sidebar</p>
+                <p className="text-gray-600 text-sm mt-1 mb-4">Pick one from the sidebar</p>
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="md:hidden bg-blue-600 hover:bg-blue-500 text-white text-sm px-6 py-2.5 rounded-xl transition font-medium">
+                  Browse repos
+                </button>
               </div>
             </div>
           )}
